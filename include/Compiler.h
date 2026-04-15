@@ -104,6 +104,10 @@ std::vector<std::vector<size_t>> breakStack;
     size_t j = emitJump(OP_JUMP);
     breakStack.back().push_back(j);
 }
+        else if (dynamic_cast<ContinueNode*>(s)) {
+    emit(OP_JUMP);
+    emit(loopStartStack.back());
+}
     }
 
 public:
