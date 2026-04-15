@@ -5,6 +5,8 @@
 class Compiler {
     std::vector<uint8_t> code;
     std::unordered_map<std::string, uint8_t> vars;
+std::vector<size_t> loopStartStack;
+std::vector<std::vector<size_t>> breakStack;
     uint8_t varCount = 0;
 
     void emit(uint8_t b) { code.push_back(b); }
