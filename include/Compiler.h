@@ -5,8 +5,11 @@
 class Compiler {
     std::vector<uint8_t> code;
     std::unordered_map<std::string, uint8_t> vars;
-    std::vector<size_t> loopStartStack;
+    
+    // [NEW] Track breaks and continues separately to allow precise patching
     std::vector<std::vector<size_t>> breakStack;
+    std::vector<std::vector<size_t>> continueStack; 
+    
     uint8_t varCount = 0;
 
     void emit(uint8_t b) { code.push_back(b); }
@@ -19,6 +22,11 @@ class Compiler {
 
     void patchJump(size_t pos) {
         code[pos] = code.size();
+    }
+
+    // [NEW] Helper to patch jumps to specific targets (needed for loops)
+    void patchJumpTo(size_t pos, size_t target) {
+        code[pos] = target;
     }
 
     void expr(ExprNode* e) {
@@ -40,11 +48,11 @@ class Compiler {
         else if (auto* d = dynamic_cast<DivNode*>(e)) {
             expr(d->l.get()); expr(d->r.get()); emit(OP_DIV);
         }
-        else if (auto* l = dynamic_cast<LessNode*>(e)) {               // [NEW] Compiles < to bytecode
-            expr(l->l.get()); expr(l->r.get()); emit(OP_LESS);         // [NEW]
+        else if (auto* l = dynamic_cast<LessNode*>(e)) {           
+            expr(l->l.get()); expr(l->r.get()); emit(OP_LESS);         
         }
-        else if (auto* g = dynamic_cast<GreaterNode*>(e)) {            // [NEW] Compiles > to bytecode
-            expr(g->l.get()); expr(g->r.get()); emit(OP_GREATER);      // [NEW]
+        else if (auto* g = dynamic_cast<GreaterNode*>(e)) {            
+            expr(g->l.get()); expr(g->r.get()); emit(OP_GREATER);      
         }
     }
 
@@ -80,11 +88,12 @@ class Compiler {
 
             patchJump(jEnd);
         }
+        
         else if (auto* w = dynamic_cast<WhileNode*>(s)) {
-
             size_t loopStart = code.size();
-            loopStartStack.push_back(loopStart);
+            
             breakStack.push_back({});
+            continueStack.push_back({}); // [NEW]
 
             expr(w->cond.get());
 
@@ -98,21 +107,92 @@ class Compiler {
 
             patchJump(jFalse);
 
-            // patch all breaks
-            for (auto pos : breakStack.back()) {
-                patchJump(pos);
-            }
+            for (auto pos : breakStack.back()) patchJump(pos);
+            // [NEW] while continues patch to start of loop
+            for (auto pos : continueStack.back()) patchJumpTo(pos, loopStart);
 
             breakStack.pop_back();
-            loopStartStack.pop_back();
+            continueStack.pop_back();
         }
+
+        // [NEW] Compile Do-While
+        else if (auto* d = dynamic_cast<DoWhileNode*>(s)) {
+            size_t loopStart = code.size();
+            
+            breakStack.push_back({});
+            continueStack.push_back({});
+
+            // 1. Execute Body
+            for (auto& st : d->body->stmts)
+                stmt(st.get());
+
+            size_t condStart = code.size();
+
+            // 2. Evaluate Condition
+            expr(d->cond.get());
+            
+            // 3. Jump based on condition
+            size_t jFalse = emitJump(OP_JUMP_IF_FALSE);
+            emit(OP_JUMP);
+            emit(loopStart);
+            
+            patchJump(jFalse);
+
+            for (auto pos : breakStack.back()) patchJump(pos);
+            // Continues inside do-while jump straight to condition check
+            for (auto pos : continueStack.back()) patchJumpTo(pos, condStart);
+
+            breakStack.pop_back();
+            continueStack.pop_back();
+        }
+
+        // [NEW] Compile For Loop
+        else if (auto* f = dynamic_cast<ForNode*>(s)) {
+            breakStack.push_back({});
+            continueStack.push_back({});
+
+            // 1. Init Step
+            if (f->init) stmt(f->init.get());
+
+            size_t loopStart = code.size();
+            
+            // 2. Condition Step
+            size_t jFalse = -1;
+            if (f->cond) {
+                expr(f->cond.get());
+                jFalse = emitJump(OP_JUMP_IF_FALSE);
+            }
+
+            // 3. Body
+            for (auto& st : f->body->stmts)
+                stmt(st.get());
+
+            // 4. Increment Step (Continues jump here)
+            size_t incStart = code.size();
+            if (f->inc) stmt(f->inc.get());
+
+            // 5. Jump back to top
+            emit(OP_JUMP);
+            emit(loopStart);
+
+            // 6. Patch End
+            if (jFalse != -1) patchJump(jFalse);
+
+            for (auto pos : breakStack.back()) patchJump(pos);
+            // For loops need continues to hit the increment step before looping
+            for (auto pos : continueStack.back()) patchJumpTo(pos, incStart);
+
+            breakStack.pop_back();
+            continueStack.pop_back();
+        }
+
         else if (dynamic_cast<BreakNode*>(s)) {
             size_t j = emitJump(OP_JUMP);
             breakStack.back().push_back(j);
         }
         else if (dynamic_cast<ContinueNode*>(s)) {
-            emit(OP_JUMP);
-            emit(loopStartStack.back());
+            size_t j = emitJump(OP_JUMP);
+            continueStack.back().push_back(j); // [NEW] uses unified continue logic
         }
     }
 
