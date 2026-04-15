@@ -1,7 +1,7 @@
-let x = 10;
-let y = 20;
+let x = 5;
 
-print x + y;
-print 5 + 3 * 4 / 2 - 8;
-print (2 + 3) * 4;
-print x * (y + 5) - 10;
+if (x) {
+    print 10;
+} else {
+    print 20;
+}
