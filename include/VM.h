@@ -70,6 +70,22 @@ public:
                     break;
                 }
 
+                // [NEW] --- LESS (<) ---
+                case OP_LESS: {
+                    int b = pop();
+                    int a = pop();
+                    push(a < b); // Pushes 1 if true, 0 if false
+                    break;
+                }
+
+                // [NEW] --- GREATER (>) ---
+                case OP_GREATER: {
+                    int b = pop();
+                    int a = pop();
+                    push(a > b); // Pushes 1 if true, 0 if false
+                    break;
+                }
+
                 // --- STORE ---
                 case OP_STORE: {
                     uint8_t slot = bytecode[ip++];
@@ -93,17 +109,18 @@ public:
                 // --- HALT ---
                 case OP_HALT:
                     return;
+                    
                 case OP_JUMP: {
-    ip = bytecode[ip];
-    break;
-}
+                    ip = bytecode[ip];
+                    break;
+                }
 
-case OP_JUMP_IF_FALSE: {
-    int cond = pop();
-    uint8_t target = bytecode[ip++];
-    if (!cond) ip = target;
-    break;
-}
+                case OP_JUMP_IF_FALSE: {
+                    int cond = pop();
+                    uint8_t target = bytecode[ip++];
+                    if (!cond) ip = target;
+                    break;
+                }
 
                 // --- UNKNOWN ---
                 default:
