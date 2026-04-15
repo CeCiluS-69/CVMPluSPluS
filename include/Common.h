@@ -10,6 +10,7 @@
 enum TokenType {
     TOK_LET, TOK_PRINT,
     TOK_IF, TOK_ELSE,
+    TOK_FOR, TOK_DO, // [NEW] Loop tokens
 
     TOK_IDENT, TOK_INT,
 
@@ -19,7 +20,7 @@ enum TokenType {
     TOK_LPAREN, TOK_RPAREN,
     TOK_LBRACE, TOK_RBRACE,
     
-    TOK_LESS, TOK_GREATER, // [NEW] Added relational tokens
+    TOK_LESS, TOK_GREATER,
 
     TOK_WHILE,
     TOK_BREAK,
@@ -37,7 +38,7 @@ struct Token {
 enum Opcode : uint8_t {
     OP_PUSH,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV,
-    OP_LESS, OP_GREATER, // [NEW] Added relational opcodes
+    OP_LESS, OP_GREATER,
 
     OP_STORE, OP_LOAD,
     OP_PRINT,
