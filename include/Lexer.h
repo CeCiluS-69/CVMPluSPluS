@@ -11,24 +11,22 @@ public:
         while (i < source.length()) {
             char c = source[i];
 
-            // Skip whitespace
             if (std::isspace(c)) { i++; continue; }
 
-            // Operators
             if (c == '+') { tokens.push_back({TOK_PLUS, "+"}); i++; continue; }
             if (c == '-') { tokens.push_back({TOK_MINUS, "-"}); i++; continue; }
             if (c == '*') { tokens.push_back({TOK_STAR, "*"}); i++; continue; }
             if (c == '/') { tokens.push_back({TOK_SLASH, "/"}); i++; continue; }
 
-            // Assignment & semicolon
             if (c == '=') { tokens.push_back({TOK_ASSIGN, "="}); i++; continue; }
             if (c == ';') { tokens.push_back({TOK_SEMI, ";"}); i++; continue; }
 
-            // Parentheses
             if (c == '(') { tokens.push_back({TOK_LPAREN, "("}); i++; continue; }
             if (c == ')') { tokens.push_back({TOK_RPAREN, ")"}); i++; continue; }
 
-            // Numbers
+            if (c == '{') { tokens.push_back({TOK_LBRACE, "{"}); i++; continue; }
+            if (c == '}') { tokens.push_back({TOK_RBRACE, "}"}); i++; continue; }
+
             if (std::isdigit(c)) {
                 std::string num;
                 while (i < source.length() && std::isdigit(source[i])) {
@@ -38,7 +36,6 @@ public:
                 continue;
             }
 
-            // Identifiers / Keywords
             if (std::isalpha(c)) {
                 std::string ident;
                 while (i < source.length() && std::isalnum(source[i])) {
@@ -47,12 +44,13 @@ public:
 
                 if (ident == "let") tokens.push_back({TOK_LET, ident});
                 else if (ident == "print") tokens.push_back({TOK_PRINT, ident});
+                else if (ident == "if") tokens.push_back({TOK_IF, ident});
+                else if (ident == "else") tokens.push_back({TOK_ELSE, ident});
                 else tokens.push_back({TOK_IDENT, ident});
 
                 continue;
             }
 
-            // Unknown character → skip (can improve later)
             i++;
         }
 
