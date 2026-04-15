@@ -93,6 +93,17 @@ public:
                 // --- HALT ---
                 case OP_HALT:
                     return;
+                case OP_JUMP: {
+    ip = bytecode[ip];
+    break;
+}
+
+case OP_JUMP_IF_FALSE: {
+    int cond = pop();
+    uint8_t target = bytecode[ip++];
+    if (!cond) ip = target;
+    break;
+}
 
                 // --- UNKNOWN ---
                 default:
