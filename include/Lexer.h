@@ -46,6 +46,9 @@ public:
                 else if (ident == "print") tokens.push_back({TOK_PRINT, ident});
                 else if (ident == "if") tokens.push_back({TOK_IF, ident});
                 else if (ident == "else") tokens.push_back({TOK_ELSE, ident});
+                    else if (ident == "while") tokens.push_back({TOK_WHILE, ident});
+else if (ident == "break") tokens.push_back({TOK_BREAK, ident});
+else if (ident == "continue") tokens.push_back({TOK_CONTINUE, ident});
                 else tokens.push_back({TOK_IDENT, ident});
 
                 continue;
