@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <string_view>
 #include <vector>
 #include <iostream>
 #include <memory>
@@ -10,7 +11,7 @@
 enum TokenType {
     TOK_LET, TOK_PRINT,
     TOK_IF, TOK_ELSE,
-    TOK_FOR, TOK_DO, // [NEW] Loop tokens
+    TOK_FOR, TOK_DO, 
 
     TOK_IDENT, TOK_INT,
 
@@ -31,7 +32,7 @@ enum TokenType {
 
 struct Token {
     TokenType type;
-    std::string lexeme;
+    std::string_view lexeme; // Optimized: Zero-allocation string view
 };
 
 // --- OPCODES ---
