@@ -5,8 +5,8 @@
 class Compiler {
     std::vector<uint8_t> code;
     std::unordered_map<std::string, uint8_t> vars;
-std::vector<size_t> loopStartStack;
-std::vector<std::vector<size_t>> breakStack;
+    std::vector<size_t> loopStartStack;
+    std::vector<std::vector<size_t>> breakStack;
     uint8_t varCount = 0;
 
     void emit(uint8_t b) { code.push_back(b); }
@@ -39,6 +39,12 @@ std::vector<std::vector<size_t>> breakStack;
         }
         else if (auto* d = dynamic_cast<DivNode*>(e)) {
             expr(d->l.get()); expr(d->r.get()); emit(OP_DIV);
+        }
+        else if (auto* l = dynamic_cast<LessNode*>(e)) {               // [NEW] Compiles < to bytecode
+            expr(l->l.get()); expr(l->r.get()); emit(OP_LESS);         // [NEW]
+        }
+        else if (auto* g = dynamic_cast<GreaterNode*>(e)) {            // [NEW] Compiles > to bytecode
+            expr(g->l.get()); expr(g->r.get()); emit(OP_GREATER);      // [NEW]
         }
     }
 
@@ -76,38 +82,38 @@ std::vector<std::vector<size_t>> breakStack;
         }
         else if (auto* w = dynamic_cast<WhileNode*>(s)) {
 
-    size_t loopStart = code.size();
-    loopStartStack.push_back(loopStart);
-    breakStack.push_back({});
+            size_t loopStart = code.size();
+            loopStartStack.push_back(loopStart);
+            breakStack.push_back({});
 
-    expr(w->cond.get());
+            expr(w->cond.get());
 
-    size_t jFalse = emitJump(OP_JUMP_IF_FALSE);
+            size_t jFalse = emitJump(OP_JUMP_IF_FALSE);
 
-    for (auto& st : w->body->stmts)
-        stmt(st.get());
+            for (auto& st : w->body->stmts)
+                stmt(st.get());
 
-    emit(OP_JUMP);
-    emit(loopStart);
+            emit(OP_JUMP);
+            emit(loopStart);
 
-    patchJump(jFalse);
+            patchJump(jFalse);
 
-    // patch all breaks
-    for (auto pos : breakStack.back()) {
-        patchJump(pos);
-    }
+            // patch all breaks
+            for (auto pos : breakStack.back()) {
+                patchJump(pos);
+            }
 
-    breakStack.pop_back();
-    loopStartStack.pop_back();
-}
+            breakStack.pop_back();
+            loopStartStack.pop_back();
+        }
         else if (dynamic_cast<BreakNode*>(s)) {
-    size_t j = emitJump(OP_JUMP);
-    breakStack.back().push_back(j);
-}
+            size_t j = emitJump(OP_JUMP);
+            breakStack.back().push_back(j);
+        }
         else if (dynamic_cast<ContinueNode*>(s)) {
-    emit(OP_JUMP);
-    emit(loopStartStack.back());
-}
+            emit(OP_JUMP);
+            emit(loopStartStack.back());
+        }
     }
 
 public:
