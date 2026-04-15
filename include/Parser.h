@@ -32,6 +32,19 @@ struct DivNode : ExprNode {
         : l(std::move(a)), r(std::move(b)) {}
 };
 
+// [NEW] AST Nodes for relational operators
+struct LessNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    LessNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
+
+struct GreaterNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    GreaterNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
+
 // --- STATEMENTS ---
 struct StmtNode : ASTNode {};
 
@@ -113,6 +126,10 @@ class Parser {
                 left = std::make_unique<AddNode>(std::move(left), term());
             else if (match(TOK_MINUS))
                 left = std::make_unique<SubNode>(std::move(left), term());
+            else if (match(TOK_LESS))                                                  // [NEW] Let the parser read <
+                left = std::make_unique<LessNode>(std::move(left), term());            // [NEW] 
+            else if (match(TOK_GREATER))                                               // [NEW] Let the parser read >
+                left = std::make_unique<GreaterNode>(std::move(left), term());         // [NEW] 
             else break;
         }
         return left;
@@ -121,8 +138,16 @@ class Parser {
     std::unique_ptr<BlockNode> block() {
         auto b = std::make_unique<BlockNode>();
         match(TOK_LBRACE);
-        while (!match(TOK_RBRACE)) {
-            b->stmts.push_back(statement());
+        
+        // [NEW] Added EOF check so the compiler doesn't freeze forever if there's a syntax error
+        while (!match(TOK_RBRACE) && peek().type != TOK_EOF) { 
+            auto stmt = statement();
+            if (stmt) {
+                b->stmts.push_back(std::move(stmt));
+            } else {
+                std::cerr << "Syntax Error near: " << peek().lexeme << "\n";
+                advance(); // [NEW] Force consume the bad token so it doesn't loop infinitely
+            }
         }
         return b;
     }
@@ -136,6 +161,18 @@ class Parser {
             match(TOK_SEMI);
             return std::make_unique<LetNode>(name, std::move(e));
         }
+        
+        // [NEW] This allows you to update variables! (e.g., i = i + 1;)
+        if (peek().type == TOK_IDENT) {
+            if (current + 1 < tokens.size() && tokens[current + 1].type == TOK_ASSIGN) {
+                std::string name = advance().lexeme;
+                match(TOK_ASSIGN);
+                auto e = expression();
+                match(TOK_SEMI);
+                // We can reuse LetNode here since your Compiler correctly updates existing memory slots!
+                return std::make_unique<LetNode>(name, std::move(e)); 
+            }
+        }
 
         if (match(TOK_PRINT)) {
             auto e = expression();
@@ -143,27 +180,27 @@ class Parser {
             return std::make_unique<PrintNode>(std::move(e));
         }
         if (match(TOK_WHILE)) {
-    match(TOK_LPAREN);
-    auto cond = expression();
-    match(TOK_RPAREN);
+            match(TOK_LPAREN);
+            auto cond = expression();
+            match(TOK_RPAREN);
 
-    auto body = block();
+            auto body = block();
 
-    auto node = std::make_unique<WhileNode>();
-    node->cond = std::move(cond);
-    node->body = std::move(body);
-    return node;
-}
+            auto node = std::make_unique<WhileNode>();
+            node->cond = std::move(cond);
+            node->body = std::move(body);
+            return node;
+        }
 
-if (match(TOK_BREAK)) {
-    match(TOK_SEMI);
-    return std::make_unique<BreakNode>();
-}
+        if (match(TOK_BREAK)) {
+            match(TOK_SEMI);
+            return std::make_unique<BreakNode>();
+        }
 
-if (match(TOK_CONTINUE)) {
-    match(TOK_SEMI);
-    return std::make_unique<ContinueNode>();
-}
+        if (match(TOK_CONTINUE)) {
+            match(TOK_SEMI);
+            return std::make_unique<ContinueNode>();
+        }
 
         if (match(TOK_IF)) {
             match(TOK_LPAREN);
@@ -194,7 +231,13 @@ public:
 
         std::vector<std::unique_ptr<StmtNode>> out;
         while (peek().type != TOK_EOF) {
-            out.push_back(statement());
+            auto stmt = statement();
+            if (stmt) {
+                out.push_back(std::move(stmt));
+            } else {
+                std::cerr << "Syntax Error near: " << peek().lexeme << "\n";
+                advance(); // Prevent freezing at the root level too
+            }
         }
         return out;
     }
