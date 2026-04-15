@@ -18,8 +18,8 @@ public:
             if (c == '*') { tokens.push_back({TOK_STAR, "*"}); i++; continue; }
             if (c == '/') { tokens.push_back({TOK_SLASH, "/"}); i++; continue; }
 
-            if (c == '<') { tokens.push_back({TOK_LESS, "<"}); i++; continue; }    // [NEW] 
-            if (c == '>') { tokens.push_back({TOK_GREATER, ">"}); i++; continue; } // [NEW]
+            if (c == '<') { tokens.push_back({TOK_LESS, "<"}); i++; continue; }   
+            if (c == '>') { tokens.push_back({TOK_GREATER, ">"}); i++; continue; }
 
             if (c == '=') { tokens.push_back({TOK_ASSIGN, "="}); i++; continue; }
             if (c == ';') { tokens.push_back({TOK_SEMI, ";"}); i++; continue; }
@@ -50,6 +50,8 @@ public:
                 else if (ident == "if") tokens.push_back({TOK_IF, ident});
                 else if (ident == "else") tokens.push_back({TOK_ELSE, ident});
                 else if (ident == "while") tokens.push_back({TOK_WHILE, ident});
+                else if (ident == "for") tokens.push_back({TOK_FOR, ident}); // [NEW]
+                else if (ident == "do") tokens.push_back({TOK_DO, ident});   // [NEW]
                 else if (ident == "break") tokens.push_back({TOK_BREAK, ident});
                 else if (ident == "continue") tokens.push_back({TOK_CONTINUE, ident});
                 else tokens.push_back({TOK_IDENT, ident});
