@@ -51,6 +51,13 @@ struct PrintNode : StmtNode {
 struct BlockNode : StmtNode {
     std::vector<std::unique_ptr<StmtNode>> stmts;
 };
+struct WhileNode : StmtNode {
+    std::unique_ptr<ExprNode> cond;
+    std::unique_ptr<BlockNode> body;
+};
+
+struct BreakNode : StmtNode {};
+struct ContinueNode : StmtNode {};
 
 struct IfNode : StmtNode {
     std::unique_ptr<ExprNode> cond;
@@ -135,6 +142,28 @@ class Parser {
             match(TOK_SEMI);
             return std::make_unique<PrintNode>(std::move(e));
         }
+        if (match(TOK_WHILE)) {
+    match(TOK_LPAREN);
+    auto cond = expression();
+    match(TOK_RPAREN);
+
+    auto body = block();
+
+    auto node = std::make_unique<WhileNode>();
+    node->cond = std::move(cond);
+    node->body = std::move(body);
+    return node;
+}
+
+if (match(TOK_BREAK)) {
+    match(TOK_SEMI);
+    return std::make_unique<BreakNode>();
+}
+
+if (match(TOK_CONTINUE)) {
+    match(TOK_SEMI);
+    return std::make_unique<ContinueNode>();
+}
 
         if (match(TOK_IF)) {
             match(TOK_LPAREN);
