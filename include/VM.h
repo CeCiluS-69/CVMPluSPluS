@@ -26,13 +26,11 @@ public:
 
             switch (instruction) {
 
-                // --- PUSH ---
                 case OP_PUSH: {
                     push(bytecode[ip++]);
                     break;
                 }
 
-                // --- ADD ---
                 case OP_ADD: {
                     int b = pop();
                     int a = pop();
@@ -40,7 +38,6 @@ public:
                     break;
                 }
 
-                // --- SUB ---
                 case OP_SUB: {
                     int b = pop();
                     int a = pop();
@@ -48,7 +45,6 @@ public:
                     break;
                 }
 
-                // --- MUL ---
                 case OP_MUL: {
                     int b = pop();
                     int a = pop();
@@ -56,7 +52,6 @@ public:
                     break;
                 }
 
-                // --- DIV ---
                 case OP_DIV: {
                     int b = pop();
                     int a = pop();
@@ -70,46 +65,40 @@ public:
                     break;
                 }
 
-                // [NEW] --- LESS (<) ---
                 case OP_LESS: {
                     int b = pop();
                     int a = pop();
-                    push(a < b); // Pushes 1 if true, 0 if false
+                    push(a < b); 
                     break;
                 }
 
-                // [NEW] --- GREATER (>) ---
                 case OP_GREATER: {
                     int b = pop();
                     int a = pop();
-                    push(a > b); // Pushes 1 if true, 0 if false
+                    push(a > b);
                     break;
                 }
 
-                // --- STORE ---
                 case OP_STORE: {
                     uint8_t slot = bytecode[ip++];
                     variables[slot] = pop();
                     break;
                 }
 
-                // --- LOAD ---
                 case OP_LOAD: {
                     uint8_t slot = bytecode[ip++];
                     push(variables[slot]);
                     break;
                 }
 
-                // --- PRINT ---
                 case OP_PRINT: {
                     std::cout << pop() << std::endl;
                     break;
                 }
 
-                // --- HALT ---
                 case OP_HALT:
                     return;
-                    
+  
                 case OP_JUMP: {
                     ip = bytecode[ip];
                     break;
@@ -122,7 +111,6 @@ public:
                     break;
                 }
 
-                // --- UNKNOWN ---
                 default:
                     std::cerr << "Runtime Error: Unknown opcode " << (int)instruction << std::endl;
                     return;
