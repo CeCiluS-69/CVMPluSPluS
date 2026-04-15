@@ -1,81 +1,172 @@
 #pragma once
 #include "Common.h"
-#include "Parser.h"
 
-class Compiler {
-    std::vector<uint8_t> bytecode;
-    std::unordered_map<std::string, uint8_t> varMap;
-    uint8_t varCounter = 0;
+// --- AST ---
+struct ASTNode { virtual ~ASTNode() = default; };
+struct ExprNode : ASTNode {};
 
-    void emit(uint8_t byte) { bytecode.push_back(byte); }
+struct IntNode : ExprNode { int value; IntNode(int v) : value(v) {} };
+struct VarNode : ExprNode { std::string name; VarNode(std::string n) : name(n) {} };
 
-    void compileExpr(ExprNode* expr) {
+struct AddNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    AddNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
 
-        // --- INTEGER ---
-        if (auto* intNode = dynamic_cast<IntNode*>(expr)) {
-            emit(OP_PUSH);
-            emit((uint8_t)intNode->value);
+struct SubNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    SubNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
+
+struct MulNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    MulNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
+
+struct DivNode : ExprNode {
+    std::unique_ptr<ExprNode> l, r;
+    DivNode(std::unique_ptr<ExprNode> a, std::unique_ptr<ExprNode> b)
+        : l(std::move(a)), r(std::move(b)) {}
+};
+
+// --- STATEMENTS ---
+struct StmtNode : ASTNode {};
+
+struct LetNode : StmtNode {
+    std::string name;
+    std::unique_ptr<ExprNode> expr;
+    LetNode(std::string n, std::unique_ptr<ExprNode> e)
+        : name(n), expr(std::move(e)) {}
+};
+
+struct PrintNode : StmtNode {
+    std::unique_ptr<ExprNode> expr;
+    PrintNode(std::unique_ptr<ExprNode> e)
+        : expr(std::move(e)) {}
+};
+
+struct BlockNode : StmtNode {
+    std::vector<std::unique_ptr<StmtNode>> stmts;
+};
+
+struct IfNode : StmtNode {
+    std::unique_ptr<ExprNode> cond;
+    std::unique_ptr<BlockNode> thenBlock;
+    std::unique_ptr<BlockNode> elseBlock;
+};
+
+// --- PARSER ---
+class Parser {
+    std::vector<Token> tokens;
+    size_t current = 0;
+
+    Token advance() { return tokens[current++]; }
+    Token peek() { return tokens[current]; }
+
+    bool match(TokenType t) {
+        if (peek().type == t) { advance(); return true; }
+        return false;
+    }
+
+    std::unique_ptr<ExprNode> primary() {
+        if (match(TOK_INT))
+            return std::make_unique<IntNode>(std::stoi(tokens[current-1].lexeme));
+
+        if (match(TOK_IDENT))
+            return std::make_unique<VarNode>(tokens[current-1].lexeme);
+
+        if (match(TOK_LPAREN)) {
+            auto e = expression();
+            match(TOK_RPAREN);
+            return e;
         }
 
-        // --- VARIABLE ---
-        else if (auto* varNode = dynamic_cast<VarNode*>(expr)) {
-            emit(OP_LOAD);
-            emit(varMap[varNode->name]);
+        return nullptr;
+    }
+
+    std::unique_ptr<ExprNode> term() {
+        auto left = primary();
+        while (true) {
+            if (match(TOK_STAR))
+                left = std::make_unique<MulNode>(std::move(left), primary());
+            else if (match(TOK_SLASH))
+                left = std::make_unique<DivNode>(std::move(left), primary());
+            else break;
+        }
+        return left;
+    }
+
+    std::unique_ptr<ExprNode> expression() {
+        auto left = term();
+        while (true) {
+            if (match(TOK_PLUS))
+                left = std::make_unique<AddNode>(std::move(left), term());
+            else if (match(TOK_MINUS))
+                left = std::make_unique<SubNode>(std::move(left), term());
+            else break;
+        }
+        return left;
+    }
+
+    std::unique_ptr<BlockNode> block() {
+        auto b = std::make_unique<BlockNode>();
+        match(TOK_LBRACE);
+        while (!match(TOK_RBRACE)) {
+            b->stmts.push_back(statement());
+        }
+        return b;
+    }
+
+    std::unique_ptr<StmtNode> statement() {
+
+        if (match(TOK_LET)) {
+            std::string name = advance().lexeme;
+            match(TOK_ASSIGN);
+            auto e = expression();
+            match(TOK_SEMI);
+            return std::make_unique<LetNode>(name, std::move(e));
         }
 
-        // --- ADD ---
-        else if (auto* addNode = dynamic_cast<AddNode*>(expr)) {
-            compileExpr(addNode->left.get());
-            compileExpr(addNode->right.get());
-            emit(OP_ADD);
+        if (match(TOK_PRINT)) {
+            auto e = expression();
+            match(TOK_SEMI);
+            return std::make_unique<PrintNode>(std::move(e));
         }
 
-        // --- SUB ---
-        else if (auto* subNode = dynamic_cast<SubNode*>(expr)) {
-            compileExpr(subNode->left.get());
-            compileExpr(subNode->right.get());
-            emit(OP_SUB);
+        if (match(TOK_IF)) {
+            match(TOK_LPAREN);
+            auto cond = expression();
+            match(TOK_RPAREN);
+
+            auto thenBlock = block();
+
+            std::unique_ptr<BlockNode> elseBlock = nullptr;
+            if (match(TOK_ELSE)) {
+                elseBlock = block();
+            }
+
+            auto node = std::make_unique<IfNode>();
+            node->cond = std::move(cond);
+            node->thenBlock = std::move(thenBlock);
+            node->elseBlock = std::move(elseBlock);
+            return node;
         }
 
-        // --- MUL ---
-        else if (auto* mulNode = dynamic_cast<MulNode*>(expr)) {
-            compileExpr(mulNode->left.get());
-            compileExpr(mulNode->right.get());
-            emit(OP_MUL);
-        }
-
-        // --- DIV ---
-        else if (auto* divNode = dynamic_cast<DivNode*>(expr)) {
-            compileExpr(divNode->left.get());
-            compileExpr(divNode->right.get());
-            emit(OP_DIV);
-        }
+        return nullptr;
     }
 
 public:
-    std::vector<uint8_t> compile(const std::vector<std::unique_ptr<StmtNode>>& ast) {
-        for (const auto& stmt : ast) {
+    std::vector<std::unique_ptr<StmtNode>> parse(std::vector<Token> t) {
+        tokens = t;
+        current = 0;
 
-            // --- LET STATEMENT ---
-            if (auto* letNode = dynamic_cast<LetNode*>(stmt.get())) {
-                compileExpr(letNode->expr.get());
-
-                if (varMap.find(letNode->varName) == varMap.end()) {
-                    varMap[letNode->varName] = varCounter++;
-                }
-
-                emit(OP_STORE);
-                emit(varMap[letNode->varName]);
-            }
-
-            // --- PRINT STATEMENT ---
-            else if (auto* printNode = dynamic_cast<PrintNode*>(stmt.get())) {
-                compileExpr(printNode->expr.get());
-                emit(OP_PRINT);
-            }
+        std::vector<std::unique_ptr<StmtNode>> out;
+        while (peek().type != TOK_EOF) {
+            out.push_back(statement());
         }
-
-        emit(OP_HALT);
-        return bytecode;
+        return out;
     }
 };
