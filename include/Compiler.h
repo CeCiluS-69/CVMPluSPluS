@@ -74,6 +74,36 @@ std::vector<std::vector<size_t>> breakStack;
 
             patchJump(jEnd);
         }
+        else if (auto* w = dynamic_cast<WhileNode*>(s)) {
+
+    size_t loopStart = code.size();
+    loopStartStack.push_back(loopStart);
+    breakStack.push_back({});
+
+    expr(w->cond.get());
+
+    size_t jFalse = emitJump(OP_JUMP_IF_FALSE);
+
+    for (auto& st : w->body->stmts)
+        stmt(st.get());
+
+    emit(OP_JUMP);
+    emit(loopStart);
+
+    patchJump(jFalse);
+
+    // patch all breaks
+    for (auto pos : breakStack.back()) {
+        patchJump(pos);
+    }
+
+    breakStack.pop_back();
+    loopStartStack.pop_back();
+}
+        else if (dynamic_cast<BreakNode*>(s)) {
+    size_t j = emitJump(OP_JUMP);
+    breakStack.back().push_back(j);
+}
     }
 
 public:
