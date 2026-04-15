@@ -2,26 +2,21 @@
 #include "Common.h"
 
 class VM {
-    std::vector<int> stack;
-    int variables[256] = {0}; // Memory for variables
+    // Fast fixed-size arrays completely bypass std::vector allocation/bounds overhead
+    int stack[1024]; 
+    int sp = 0; // Stack Pointer
+    int variables[256] = {0}; 
 
-    void push(int val) { stack.push_back(val); }
-
-    int pop() {
-        if (stack.empty()) {
-            std::cerr << "Runtime Error: Stack underflow!" << std::endl;
-            return 0;
-        }
-        int val = stack.back();
-        stack.pop_back();
-        return val;
-    }
+    // Inline pushing and popping directly to the array
+    inline void push(int val) { stack[sp++] = val; }
+    inline int pop() { return stack[--sp]; }
 
 public:
     void run(const std::vector<uint8_t>& bytecode) {
-        size_t ip = 0; // Instruction Pointer
+        size_t ip = 0; 
 
-        while (ip < bytecode.size()) {
+        // Infinite loop avoids checking ip < bytecode.size() every cycle
+        for (;;) {
             uint8_t instruction = bytecode[ip++];
 
             switch (instruction) {
@@ -97,7 +92,7 @@ public:
                 }
 
                 case OP_HALT:
-                    return;
+                    return; // Replaces loop check
   
                 case OP_JUMP: {
                     ip = bytecode[ip];
