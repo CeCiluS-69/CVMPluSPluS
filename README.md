@@ -16,8 +16,8 @@ This project is ideal for learning:
 
 - Simple custom language with:
   - Variable declaration (`let`)
-  - Arithmetic (`+`)
-  - Print statements (`print`)
+  - Basic arithmetic operations ('+')
+  - Output statements ('print')
 - Full pipeline:
   - Lexer → Parser → Compiler → Virtual Machine
 - REPL mode (interactive)
