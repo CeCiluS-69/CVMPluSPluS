@@ -148,6 +148,13 @@ public:
                     break;
                 }
 
+                case OP_EQUAL: {
+                    int b = pop();
+                    int a = pop();
+                    push(a == b);
+                    break;
+                }
+
                 case OP_STORE: {
                     uint8_t slot = bytecode[ip++];
                     variables[slot] = pop();

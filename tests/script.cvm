@@ -1,7 +1,10 @@
-let x = 5;
+let x = 10;
+let y = 10;
+let z = 20;
 
-if (x) {
-    print 10;
-} else {
-    print 20;
+print x == y;
+print x == z;
+
+if (x == y) {
+    print 99;
 }

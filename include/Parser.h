@@ -58,6 +58,7 @@ BIN_NODE(MulNode)
 BIN_NODE(DivNode)
 BIN_NODE(LessNode)
 BIN_NODE(GreaterNode)
+BIN_NODE(EqualNode)
 
 // =====================
 // 🔹 STATEMENTS
@@ -156,6 +157,7 @@ class Parser {
             else if (match(TOK_MINUS)) left = arena.create<SubNode>(left, term());
             else if (match(TOK_LESS)) left = arena.create<LessNode>(left, term());
             else if (match(TOK_GREATER)) left = arena.create<GreaterNode>(left, term());
+            else if (match(TOK_EQUAL)) left = arena.create<EqualNode>(left, term());
             else break;
         }
         return left;

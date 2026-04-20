@@ -22,7 +22,16 @@ public:
             if (c == '<') { tokens.push_back({TOK_LESS, std::string_view(source.data() + i, 1)}); i++; continue; }
             if (c == '>') { tokens.push_back({TOK_GREATER, std::string_view(source.data() + i, 1)}); i++; continue; }
 
-            if (c == '=') { tokens.push_back({TOK_ASSIGN, std::string_view(source.data() + i, 1)}); i++; continue; }
+            if (c == '=') {
+                if (i + 1 < source.length() && source[i + 1] == '=') {
+                    tokens.push_back({TOK_EQUAL, std::string_view(source.data() + i, 2)});
+                    i += 2;
+                } else {
+                    tokens.push_back({TOK_ASSIGN, std::string_view(source.data() + i, 1)});
+                    i++;
+                }
+                continue;
+            }
             if (c == ';') { tokens.push_back({TOK_SEMI, std::string_view(source.data() + i, 1)}); i++; continue; }
 
             if (c == '(') { tokens.push_back({TOK_LPAREN, std::string_view(source.data() + i, 1)}); i++; continue; }

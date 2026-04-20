@@ -55,6 +55,9 @@ class Compiler {
         else if (auto* g = dynamic_cast<GreaterNode*>(e)) {            
             expr(g->l); expr(g->r); emit(OP_GREATER);      
         }
+        else if (auto* eq = dynamic_cast<EqualNode*>(e)) {
+            expr(eq->l); expr(eq->r); emit(OP_EQUAL);
+        }
     }
 
     // Refactored to accept raw pointers
