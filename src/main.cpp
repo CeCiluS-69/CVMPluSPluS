@@ -7,6 +7,10 @@
 #include "VM.h"
 
 void runCode(const std::string& source) {
+    std::cout << "\n============================================\n";
+    std::cout << "             CVM++ FRONTEND PIPELINE        \n";
+    std::cout << "============================================\n";
+
     Lexer lexer;
     Parser parser;
     Compiler compiler;
@@ -16,8 +20,11 @@ void runCode(const std::string& source) {
     auto ast = parser.parse(tokens);
     auto bytecode = compiler.compile(ast);
     
-    std::cout << "--- VM Execution Output ---" << std::endl;
+    std::cout << "\n============================================\n";
+    std::cout << "             VIRTUAL MACHINE RUNTIME        \n";
+    std::cout << "============================================\n";
     vm.run(bytecode);
+    std::cout << "============================================\n\n";
 }
 
 int main(int argc, char* argv[]) {
