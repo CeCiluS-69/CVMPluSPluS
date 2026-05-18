@@ -7,15 +7,15 @@
 // 🔹 BRANCH PREDICTOR (BTB & BPB)
 // ==========================================
 enum PredictorState {
-    STRONGLY_NOT_TAKEN = 0, // 00
-    WEAKLY_NOT_TAKEN   = 1, // 01
-    WEAKLY_TAKEN       = 2, // 10
-    STRONGLY_TAKEN     = 3  // 11
+    STRONGLY_NOT_TAKEN = 0, 
+    WEAKLY_NOT_TAKEN   = 1, 
+    WEAKLY_TAKEN       = 2, 
+    STRONGLY_TAKEN     = 3  
 };
 
 struct BranchEntry {
-    size_t targetAddress;       // BTB: Target Instruction Pointer
-    PredictorState state;       // BPB: 2-bit Saturating Counter
+    size_t targetAddress;       
+    PredictorState state;       
     BranchEntry() : targetAddress(0), state(WEAKLY_NOT_TAKEN) {}
 };
 
@@ -69,16 +69,13 @@ public:
 // 🔹 VIRTUAL MACHINE
 // ==========================================
 class VM {
-    // Fast fixed-size arrays completely bypass std::vector allocation/bounds overhead
     int stack[1024]; 
-    int sp = 0; // Stack Pointer
+    int sp = 0; 
     int variables[256] = {0}; 
     
-    // Hardware simulation state
     BranchPredictor predictor;
     size_t simulatedCycles = 0;
 
-    // Inline pushing and popping directly to the array
     inline void push(int val) { stack[sp++] = val; }
     inline int pop() { return stack[--sp]; }
 
@@ -86,12 +83,35 @@ public:
     void run(const std::vector<uint8_t>& bytecode) {
         size_t ip = 0; 
 
-        // Infinite loop avoids checking ip < bytecode.size() every cycle
+        std::cout << "\n--- Step-by-Step Bytecode Execution Trace ---\n";
+        std::cout << std::left << std::setw(6) << "PC" 
+                  << std::setw(18) << "Instruction" 
+                  << std::setw(12) << "Operand" 
+                  << "Stack State" << "\n";
+        std::cout << std::string(55, '-') << "\n";
+
         for (;;) {
-            simulatedCycles++; // Base cost for any instruction
-            size_t current_ip = ip; // Save the PC of the current instruction
+            simulatedCycles++; 
+            size_t current_ip = ip; 
             
             uint8_t instruction = bytecode[ip++];
+
+            // Disassemble formatting
+            std::cout << std::left << std::setw(6) << current_ip;
+            std::cout << std::setw(18) << opcodeToString(instruction);
+
+            std::string opStr = "";
+            if (instruction == OP_PUSH || instruction == OP_STORE || instruction == OP_LOAD || instruction == OP_JUMP || instruction == OP_JUMP_IF_FALSE) {
+                opStr = std::to_string((int)bytecode[ip]);
+            }
+            std::cout << std::setw(12) << opStr;
+
+            // Diagnostic visualization of evaluation stack layout
+            std::cout << "[";
+            for (int sIdx = 0; sIdx < sp; ++sIdx) {
+                std::cout << stack[sIdx] << (sIdx == sp - 1 ? "" : ", ");
+            }
+            std::cout << "]\n";
 
             switch (instruction) {
 
@@ -126,7 +146,7 @@ public:
                     int a = pop();
 
                     if (b == 0) {
-                        std::cerr << "Runtime Error: Division by zero!" << std::endl;
+                        std::cerr << "\nRuntime Error: Division by zero at PC " << current_ip << "!" << std::endl;
                         return;
                     }
 
@@ -158,6 +178,7 @@ public:
                 case OP_STORE: {
                     uint8_t slot = bytecode[ip++];
                     variables[slot] = pop();
+                    std::cout << "       (Var Slot " << (int)slot << " updated to: " << variables[slot] << ")\n";
                     break;
                 }
 
@@ -168,15 +189,15 @@ public:
                 }
 
                 case OP_PRINT: {
-                    std::cout << pop() << std::endl;
+                    std::cout << ">>> VM OUTPUT: " << pop() << " <<<\n";
                     break;
                 }
 
                 case OP_HALT:
-                    std::cout << "\nExecution finished in " << simulatedCycles << " CPU cycles.\n";
+                    std::cout << "\nExecution finished cleanly in " << simulatedCycles << " simulated CPU cycles.\n";
                     predictor.printStats();
                     return; 
-  
+
                 case OP_JUMP: {
                     ip = bytecode[ip];
                     break;
@@ -186,23 +207,21 @@ public:
                     int cond = pop();
                     uint8_t target = bytecode[ip++]; 
                     
-                    // 1. Predict
                     size_t predictedTarget = 0;
                     bool predictedTaken = predictor.predict(current_ip, predictedTarget);
-                    
-                    // 2. Evaluate actual condition
                     bool actuallyTaken = (cond == 0); 
 
-                    // 3. Simulate Hardware Penalties
-                    if (predictedTaken != actuallyTaken) {
-                        // Pipeline Flush Penalty
-                        simulatedCycles += 5; 
-                    }
+                    std::cout << "       (Predictor: " << (predictedTaken ? "TAKEN" : "NOT_TAKEN")
+                              << " | Actual: " << (actuallyTaken ? "TAKEN" : "NOT_TAKEN");
 
-                    // 4. Execute jump
+                    if (predictedTaken != actuallyTaken) {
+                        simulatedCycles += 5; 
+                        std::cout << " -> Pipeline Flush! +5 Cycle Penalty";
+                    }
+                    std::cout << ")\n";
+
                     if (actuallyTaken) ip = target;
 
-                    // 5. Train predictor
                     predictor.update(current_ip, target, actuallyTaken, predictedTaken);
                     break;
                 }
