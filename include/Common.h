@@ -49,3 +49,24 @@ enum Opcode : uint8_t {
 
     OP_HALT
 };
+
+// Helper utility to translate numerical opcodes to readable text
+inline const char* opcodeToString(uint8_t op) {
+    switch (op) {
+        case OP_PUSH:          return "OP_PUSH";
+        case OP_ADD:           return "OP_ADD";
+        case OP_SUB:           return "OP_SUB";
+        case OP_MUL:           return "OP_MUL";
+        case OP_DIV:           return "OP_DIV";
+        case OP_LESS:          return "OP_LESS";
+        case OP_GREATER:       return "OP_GREATER";
+        case OP_EQUAL:         return "OP_EQUAL";
+        case OP_STORE:         return "OP_STORE";
+        case OP_LOAD:          return "OP_LOAD";
+        case OP_PRINT:         return "OP_PRINT";
+        case OP_JUMP:          return "OP_JUMP";
+        case OP_JUMP_IF_FALSE: return "OP_JUMP_IF_FALSE";
+        case OP_HALT:          return "OP_HALT";
+        default:               return "OP_UNKNOWN";
+    }
+}
