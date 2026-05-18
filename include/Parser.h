@@ -122,9 +122,6 @@ class Parser {
         return false;
     }
 
-    // -----------------
-    // 🔹 EXPRESSIONS
-    // -----------------
     ExprNode* primary() {
         if (match(TOK_INT))
             return arena.create<IntNode>(std::stoi(std::string(tokens[current-1].lexeme)));
@@ -163,9 +160,6 @@ class Parser {
         return left;
     }
 
-    // -----------------
-    // 🔹 BLOCK
-    // -----------------
     BlockNode* block() {
         auto b = arena.create<BlockNode>();
         match(TOK_LBRACE);
@@ -181,11 +175,7 @@ class Parser {
         return b;
     }
 
-    // -----------------
-    // 🔹 STATEMENTS
-    // -----------------
     StmtNode* statement() {
-
         if (match(TOK_LET)) {
             std::string_view name = advance().lexeme;
             match(TOK_ASSIGN);
@@ -310,6 +300,7 @@ public:
                 advance();
             }
         }
+        std::cout << "[Parser] Constructed AST containing " << out.size() << " base statements.\n";
         return out;
     }
 };
