@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <cctype>
+#include <iomanip>
 
 class Lexer {
 public:
@@ -13,7 +14,6 @@ public:
 
             if (std::isspace(c)) { i++; continue; }
 
-            // Optimized single-character tokenization
             if (c == '+') { tokens.push_back({TOK_PLUS, std::string_view(source.data() + i, 1)}); i++; continue; }
             if (c == '-') { tokens.push_back({TOK_MINUS, std::string_view(source.data() + i, 1)}); i++; continue; }
             if (c == '*') { tokens.push_back({TOK_STAR, std::string_view(source.data() + i, 1)}); i++; continue; }
@@ -40,7 +40,6 @@ public:
             if (c == '{') { tokens.push_back({TOK_LBRACE, std::string_view(source.data() + i, 1)}); i++; continue; }
             if (c == '}') { tokens.push_back({TOK_RBRACE, std::string_view(source.data() + i, 1)}); i++; continue; }
 
-            // Optimized Numbers (No concatenation)
             if (std::isdigit(c)) {
                 size_t start = i;
                 while (i < source.length() && std::isdigit(source[i])) i++;
@@ -48,7 +47,6 @@ public:
                 continue;
             }
 
-            // Optimized Identifiers & Keywords (No concatenation)
             if (std::isalpha(c)) {
                 size_t start = i;
                 while (i < source.length() && std::isalnum(source[i])) i++;
@@ -72,6 +70,7 @@ public:
         }
 
         tokens.push_back({TOK_EOF, ""});
+        std::cout << "[Lexer] Scanned and found " << tokens.size() - 1 << " valid source tokens.\n";
         return tokens;
     }
 };
