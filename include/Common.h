@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <cstdint>
 
-// --- TOKENS ---
+// TOKENS 
 enum TokenType {
     TOK_LET, TOK_PRINT,
     TOK_IF, TOK_ELSE,
@@ -32,10 +32,10 @@ enum TokenType {
 
 struct Token {
     TokenType type;
-    std::string_view lexeme; // Optimized: Zero-allocation string view
+    std::string_view lexeme; // zero allocated string value
 };
 
-// --- OPCODES ---
+// OPCODES 
 enum Opcode : uint8_t {
     OP_PUSH,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV,
@@ -50,7 +50,7 @@ enum Opcode : uint8_t {
     OP_HALT
 };
 
-// Helper utility to translate numerical opcodes to readable text
+//  utility function to translate numerical opcodes to readable commands
 inline const char* opcodeToString(uint8_t op) {
     switch (op) {
         case OP_PUSH:          return "OP_PUSH";
