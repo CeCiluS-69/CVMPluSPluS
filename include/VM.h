@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 // ==========================================
-// 🔹 BRANCH PREDICTOR (BTB & BPB)
+//  BRANCH PREDICTOR (BTB & BPB) 2 bit dynamic
 // ==========================================
 enum PredictorState {
     STRONGLY_NOT_TAKEN = 0, 
@@ -66,7 +66,7 @@ public:
 };
 
 // ==========================================
-// 🔹 VIRTUAL MACHINE
+//  VIRTUAL MACHINE
 // ==========================================
 class VM {
     int stack[1024]; 
