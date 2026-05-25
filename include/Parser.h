@@ -2,7 +2,7 @@
 #include "Common.h"
 
 // =====================
-// 🔥 ARENA ALLOCATOR
+// ARENA ALLOCATOR
 // =====================
 class Arena {
     std::vector<std::unique_ptr<char[]>> blocks;
@@ -30,7 +30,7 @@ public:
 };
 
 // =====================
-// 🔹 AST NODES
+//  AST NODES
 // =====================
 struct ASTNode { virtual ~ASTNode() = default; };
 struct ExprNode : ASTNode {};
@@ -61,7 +61,7 @@ BIN_NODE(GreaterNode)
 BIN_NODE(EqualNode)
 
 // =====================
-// 🔹 STATEMENTS
+//  STATEMENTS
 // =====================
 struct StmtNode : ASTNode {};
 
@@ -107,7 +107,7 @@ struct IfNode : StmtNode {
 };
 
 // =====================
-// 🔥 PARSER
+//  PARSER
 // =====================
 class Parser {
     std::vector<Token> tokens;
